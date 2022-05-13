@@ -1,26 +1,47 @@
-const contacts = document.getElementsByClassName("contacts")[0];
-const stickyHeader = document.getElementsByClassName("stickyHeader")[0];
+function addContacts(contactItems, offset) {
+  const contacts = document.getElementsByClassName('contacts')[0];
+  const end = offset + 10000;
+  if (end > 50000) {
+    return;
+  }
 
-function addContacts() {
-  const fragment = document.createDocumentFragment();
-  for (let i = 0; i < 50000; i++) {
+  for (let i = offset; i < end; i++) {
     const child = document.createElement("div");
     child.textContent = i;
     child.classList.add("contact");
-    fragment.appendChild(child);
+    contactItems.push(child);
   }
-  contacts.appendChild(fragment);
+  contacts.append(...contactItems.slice(offset, contactItems.length));
 }
 
-contacts.addEventListener("scroll", (e) => {
-  const items = Array.from(contacts.getElementsByClassName("contact"));
-  const itemOffsets = items.map((item) => item.offsetTop);
-  const topItemIndex = itemOffsets.findIndex(
-    (offset) => contacts.scrollTop - offset <= -18
-  );
-  if (topItemIndex !== -1) {
-    stickyHeader.textContent = items[topItemIndex].textContent;
-  }
-});
+function addContactsLazyLoad() {
+  const contacts = document.getElementsByClassName("contacts")[0];
+  const stickyHeader = document.getElementsByClassName("stickyHeader")[0];
 
-addContacts();
+  const ITEM_HEIGHT = 18.4;
+  const ONE_LOAD_CONTACTS_HEIGHT = ITEM_HEIGHT * 10000;
+
+  const items = [];
+  let offset = 0;
+  let updateHeight = ITEM_HEIGHT * 5000;
+
+  addContacts(items, offset);
+
+  contacts.addEventListener("scroll", (e) => {
+    const itemIndex = Math.round(contacts.scrollTop / ITEM_HEIGHT);
+    if (items[itemIndex]) {
+      stickyHeader.textContent = items[itemIndex].textContent;
+    }
+  });
+  
+  contacts.addEventListener('scroll', (e) => {
+    if (contacts.scrollTop > updateHeight) {
+      offset += 10000;
+      updateHeight += ONE_LOAD_CONTACTS_HEIGHT;
+
+      addContacts(items, offset);
+    }
+  });
+}
+
+addContactsLazyLoad();
